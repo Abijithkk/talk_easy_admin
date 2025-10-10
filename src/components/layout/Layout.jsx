@@ -14,14 +14,15 @@ export default function Layout({ children }) {
 
   return (
     <div className="flex h-screen">
-      {/* Sidebar on the left */}
       <Sidebar />
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-w-0">
         <Header />
-        <main className="flex-1 p-6 bg-gray-50 overflow-y-auto">
-          {children}
+        <main className="flex-1 p-4 bg-gray-50 overflow-auto"> 
+          <div className="h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>
