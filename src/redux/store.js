@@ -19,7 +19,7 @@ export const store = configureStore({
     plans: plansReducer,
     calls: callReducer,
     executiveProfile: executiveProfileSlice,
-    payements: paymentReducer,
+    payments: paymentReducer,
     adminProfile: adminProfileReducer,
     
 

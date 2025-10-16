@@ -11,16 +11,16 @@ import {
   PhoneCall,
   Clock,
   User,
-  Shield,
   Ban,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  MoreVertical,
-  Edit,
+  Search,
+  Filter,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
+import { filterUsersByStatus, searchUsers } from "@/redux/slices/userSlice";
 
 export default function UsersPage() {
   const dispatch = useDispatch();
@@ -31,8 +31,13 @@ export default function UsersPage() {
     pageIndex: 0,
     pageSize: 10,
   });
-    const router = useRouter();
-  
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
+
+  const router = useRouter();
 
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(null);
 
@@ -73,22 +78,62 @@ export default function UsersPage() {
     [pagination, users?.count]
   );
 
+  // Fetch users with current filters and pagination
+  const fetchUsersWithParams = async () => {
+    const params = {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+    };
+
+    // Add search query if exists
+    if (searchQuery) {
+      params.search = searchQuery;
+    }
+
+    // Add status filter if not "all"
+    if (statusFilter !== "all") {
+      params.status = statusFilter;
+    }
+
+    try {
+      await dispatch(fetchUsers(params)).unwrap();
+      console.log("Users fetched successfully with params:", params);
+    } catch (err) {
+      console.error("Failed to fetch users:", err);
+      toast.error("Failed to load users");
+    }
+  };
+
   useEffect(() => {
-    dispatch(
-      fetchUsers({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-      })
-    )
-      .unwrap()
-      .then((res) => {
-        console.log("Users fetched successfully:", res);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch users:", err);
-        toast.error("Failed to load users");
-      });
-  }, [dispatch, pagination.pageIndex, pagination.pageSize]);
+    fetchUsersWithParams();
+  }, [dispatch, pagination.pageIndex, pagination.pageSize, searchQuery, statusFilter]);
+
+  // Handle search
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setIsSearching(true);
+    
+    // The actual API call will be triggered by the useEffect above
+    // This ensures pagination is reset when searching
+  };
+
+  // Handle status filter
+  const handleStatusFilter = async (status) => {
+    setStatusFilter(status);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setIsFiltering(true);
+    
+    // The actual API call will be triggered by the useEffect above
+    // This ensures pagination is reset when filtering
+  };
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
 
   // Handle status update
   const handleStatusUpdate = async (userId, newStatus) => {
@@ -107,13 +152,8 @@ export default function UsersPage() {
         })
       ).unwrap();
 
-      // Refresh users list after successful update
-      dispatch(
-        fetchUsers({
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-        })
-      );
+      // Refresh users list after successful update with current filters
+      await fetchUsersWithParams();
 
       toast.success(`User status updated to ${newStatus} successfully`);
       console.log(`User ${userId} status updated to ${newStatus}`);
@@ -213,7 +253,66 @@ export default function UsersPage() {
             {users?.count && (
               <p className="text-gray-600 mt-2">
                 Showing {users.results?.length || 0} of {users.count} users
+                {(searchQuery || statusFilter !== "all") && " (filtered)"}
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search users by name, email, or mobile..."
+                  value={searchQuery}
+                  onChange={(e) => handleSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                {isSearching && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="sm:w-64">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => handleStatusFilter(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none bg-white"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="banned">Banned</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                {isFiltering && (
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {(searchQuery || statusFilter !== "all") && (
+              <Button
+                variant="outline"
+                onClick={clearFilters}
+                className="whitespace-nowrap"
+              >
+                Clear Filters
+              </Button>
             )}
           </div>
         </div>
@@ -276,17 +375,16 @@ export default function UsersPage() {
 
                   return (
                     <tr
-                  
-                     onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/user/${user.id}`);
-                  }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/user/${user.id}`);
+                      }}
                       key={user.id}
                       className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                        {user.id}
+                          {user.id}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -403,7 +501,7 @@ export default function UsersPage() {
                           {!user.is_banned && (
                             <Button
                               size="sm"
-                              variant="outline"
+                              variant="outlline"
                               onClick={() =>
                                 handleStatusUpdate(user.id, "banned")
                               }
@@ -454,11 +552,22 @@ export default function UsersPage() {
                 <User className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No users found
+                {searchQuery || statusFilter !== "all" ? "No matching users found" : "No users found"}
               </h3>
               <p className="text-gray-500 max-w-md mx-auto">
-                There are currently no users in the system.
+                {searchQuery || statusFilter !== "all" 
+                  ? "Try adjusting your search or filter criteria to find what you're looking for."
+                  : "There are currently no users in the system."}
               </p>
+              {(searchQuery || statusFilter !== "all") && (
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className="mt-4"
+                >
+                  Clear Filters
+                </Button>
+              )}
             </div>
           )}
         </div>

@@ -82,7 +82,7 @@ export default function Sidebar() {
       category: "Financial",
       items: [
         {
-          path: "/coinconversion",
+          path: "/coin-conversion",
           icon: <FaCoins size={20} />,
           label: "Coin Conversion",
         },
@@ -195,7 +195,13 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-4">
+        <nav className="flex-1 overflow-y-auto py-4 px-4 
+          scrollbar-thin 
+          scrollbar-thumb-gray-600 
+          scrollbar-track-gray-800 
+          hover:scrollbar-thumb-gray-500 
+          scrollbar-thumb-rounded-full
+          scrollbar-track-rounded-full">
           <div className="space-y-1">
             {menuItems.map((section, index) => (
               <div key={section.category} className="mb-2">

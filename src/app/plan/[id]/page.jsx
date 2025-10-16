@@ -279,7 +279,7 @@ export default function EditPlan() {
                 </label>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="edit"
                   size="sm"
                   onClick={refreshCategories}
                   disabled={categoriesLoading}

@@ -124,12 +124,12 @@ const CallHistoryPage = () => {
                       <div className="text-sm font-medium text-green-600">₹{call.executive_earnings || '0.00'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 text-xs">
+                      <div className="text-sm text-gray-900 ">
                         {formatDateTime(call.start_time)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 text-xs">
+                      <div className="text-sm text-gray-900 ">
                         {call.end_time ? formatDateTime(call.end_time) : 'N/A'}
                       </div>
                     </td>

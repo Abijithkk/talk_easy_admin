@@ -17,10 +17,9 @@ import { Image } from "lucide-react";
 
 function ExecutiveDashboard() {
   const dispatch = useDispatch();
-  const { executives, loading, error } = useSelector(
-    (state) => state.executives
-  );
-  const [pagination, setPagination] = useState({
+ const { executives, loading, error } = useSelector((state) => state.executives);
+
+ const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
@@ -33,7 +32,7 @@ function ExecutiveDashboard() {
   };
 
   // Mock table object for pagination
-  const table = useMemo(
+ const table = useMemo(
     () => ({
       getState: () => ({
         pagination,
@@ -51,9 +50,7 @@ function ExecutiveDashboard() {
       getCanPreviousPage: () => pagination.pageIndex > 0,
       getCanNextPage: () => {
         if (!executives?.count) return false;
-        return (
-          (pagination.pageIndex + 1) * pagination.pageSize < executives.count
-        );
+        return (pagination.pageIndex + 1) * pagination.pageSize < executives.count;
       },
       previousPage: () => {
         setPagination((prev) => ({

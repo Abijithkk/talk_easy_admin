@@ -4,7 +4,7 @@ import { BASE_URL } from "../baseUrl";
 
 export const fetchExecutives = createAsyncThunk(
   "executives/fetchExecutives",
-  async (_, { rejectWithValue }) => {
+  async ({ page = 1, limit = 10 } = {}, { rejectWithValue }) => {
     try {
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
@@ -12,6 +12,10 @@ export const fetchExecutives = createAsyncThunk(
         headers: {
           Authorization: token ? `Bearer ${token}` : undefined,
         },
+        params: {
+          page,
+          limit
+        }
       });
 
       return response.data;
@@ -805,7 +809,7 @@ export const {
   clearBlockedUsersError,
   clearBlockedUsers,
   clearCallHistoryError,
-  clearCallHistory, // Added the missing action
+  clearCallHistory, 
   clearUnblockUserError,
   clearUnblockUserSuccess
 } = executivesSlice.actions;

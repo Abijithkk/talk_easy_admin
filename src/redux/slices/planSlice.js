@@ -121,6 +121,33 @@ export const deletePlan = createAsyncThunk(
   }
 );
 
+// POST - Admin recharge for user
+export const adminRecharge = createAsyncThunk(
+  "plans/adminRecharge",
+  async (rechargeData, { rejectWithValue }) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await axios.post(
+        `${BASE_URL}/payments/admin/recharge/`,
+        rechargeData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(
+        error.response?.data || "Failed to process recharge"
+      );
+    }
+  }
+);
+
 const planSlice = createSlice({
   name: "plans",
   initialState: {
@@ -143,6 +170,10 @@ const planSlice = createSlice({
     deleteLoading: false,
     deleteError: null,
     deleteSuccess: null,
+    // Admin recharge states
+    rechargeLoading: false,
+    rechargeError: null,
+    rechargeSuccess: null,
   },
   reducers: {
     clearPlansError: (state) => {
@@ -175,6 +206,13 @@ const planSlice = createSlice({
     clearDeleteSuccess: (state) => {
       state.deleteSuccess = null;
     },
+    // Admin recharge clear actions
+    clearRechargeError: (state) => {
+      state.rechargeError = null;
+    },
+    clearRechargeSuccess: (state) => {
+      state.rechargeSuccess = null;
+    },
     clearAllPlanStates: (state) => {
       state.error = null;
       state.success = null;
@@ -185,6 +223,8 @@ const planSlice = createSlice({
       state.updateSuccess = null;
       state.deleteError = null;
       state.deleteSuccess = null;
+      state.rechargeError = null;
+      state.rechargeSuccess = null;
     },
   },
   extraReducers: (builder) => {
@@ -290,6 +330,21 @@ const planSlice = createSlice({
       .addCase(deletePlan.rejected, (state, action) => {
         state.deleteLoading = false;
         state.deleteError = action.payload;
+      })
+
+      // Admin Recharge
+      .addCase(adminRecharge.pending, (state) => {
+        state.rechargeLoading = true;
+        state.rechargeError = null;
+        state.rechargeSuccess = null;
+      })
+      .addCase(adminRecharge.fulfilled, (state, action) => {
+        state.rechargeLoading = false;
+        state.rechargeSuccess = action.payload?.message || "Recharge processed successfully";
+      })
+      .addCase(adminRecharge.rejected, (state, action) => {
+        state.rechargeLoading = false;
+        state.rechargeError = action.payload;
       });
   },
 });
@@ -305,6 +360,8 @@ export const {
   clearUpdateSuccess,
   clearDeleteError,
   clearDeleteSuccess,
+  clearRechargeError,
+  clearRechargeSuccess,
   clearAllPlanStates
 } = planSlice.actions;
 
