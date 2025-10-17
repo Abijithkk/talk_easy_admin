@@ -19,6 +19,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaChevronLeft,
+  FaImage,
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -31,7 +32,7 @@ export default function Sidebar() {
   const menuItems = [
     {
       category: "Dashboard",
-      items: [{ path: "/", icon: <FaHome size={20} />, label: "Dashboard" }],
+      items: [{ path: "/dashboard", icon: <FaHome size={20} />, label: "Dashboard" }],
     },
     {
       category: "User Management",
@@ -76,6 +77,8 @@ export default function Sidebar() {
         { path: "/referral", icon: <FaUser size={20} />, label: "Referrals" },
         { path: "/review", icon: <FaFileAlt size={20} />, label: "Reviews" },
         { path: "/reports", icon: <FaFileAlt size={20} />, label: "Reports" },
+        { path: "/carousel", icon: <FaImage size={20} />, label: "Carousels" },
+
       ],
     },
     {

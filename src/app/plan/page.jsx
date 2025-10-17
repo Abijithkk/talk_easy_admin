@@ -18,7 +18,9 @@ const Plan = () => {
   });
  const router = useRouter();
 
-
+  const handleAddPlan = () => {
+    router.push("/plan/add");
+  };
   // Mock table object for pagination
   const table = useMemo(
     () => ({
@@ -141,7 +143,7 @@ const Plan = () => {
           </div>
 
           {/* Add Plan Button */}
-          <Button variant='default' >
+          <Button variant='default' onClick={handleAddPlan} >
             <svg
               className="w-5 h-5 mr-2"
               fill="none"

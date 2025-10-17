@@ -122,6 +122,32 @@ export const updateExecutive = createAsyncThunk(
   }
 );
 
+
+// GET - Search executives
+export const searchExecutives = createAsyncThunk(
+  "executives/searchExecutives",
+  async ({ query, page = 1, limit = 10 } = {}, { rejectWithValue }) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await axios.get(`${BASE_URL}/executives/search/`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : undefined,
+        },
+        params: {
+          query,
+          page,
+          limit
+        }
+      });
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "Failed to search executives");
+    }
+  }
+);
+
 // PATCH - Suspend/Unsuspend executive by ID
 export const suspendExecutive = createAsyncThunk(
   "executives/suspendExecutive",
@@ -382,6 +408,14 @@ const executivesSlice = createSlice({
       results: [],
       count: 0
     },
+        searchResults: {
+      results: [],
+      count: 0
+    },
+    searchLoading: false,
+    searchError: null,
+    searchSuccess: null,
+
     loading: false,
     error: null,
     success: null,
@@ -491,6 +525,18 @@ const executivesSlice = createSlice({
     clearUnblockUserSuccess: (state) => {
       state.unblockUserSuccess = null;
     },
+    clearSearchError: (state) => {
+    state.searchError = null;
+  },
+  clearSearchSuccess: (state) => {
+    state.searchSuccess = null;
+  },
+  clearSearchResults: (state) => {
+    state.searchResults = {
+      results: [],
+      count: 0
+    };
+  },
   },
   extraReducers: (builder) => {
     builder
@@ -748,7 +794,20 @@ const executivesSlice = createSlice({
         state.blockedUsersLoading = false;
         state.blockedUsersError = action.payload;
       })
-
+  .addCase(searchExecutives.pending, (state) => {
+      state.searchLoading = true;
+      state.searchError = null;
+      state.searchSuccess = null;
+    })
+    .addCase(searchExecutives.fulfilled, (state, action) => {
+      state.searchLoading = false;
+      state.searchResults = action.payload;
+      state.searchSuccess = "Search completed successfully";
+    })
+    .addCase(searchExecutives.rejected, (state, action) => {
+      state.searchLoading = false;
+      state.searchError = action.payload;
+    })
       // Fetch Executive Call History
       .addCase(fetchExecutiveCallHistory.pending, (state) => {
         state.callHistoryLoading = true;
@@ -785,6 +844,7 @@ const executivesSlice = createSlice({
         state.unblockUserLoading = false;
         state.unblockUserError = action.payload;
       });
+      
   },
 });
 
@@ -811,7 +871,10 @@ export const {
   clearCallHistoryError,
   clearCallHistory, 
   clearUnblockUserError,
-  clearUnblockUserSuccess
+  clearUnblockUserSuccess,
+  clearSearchError,
+  clearSearchSuccess,
+  clearSearchResults
 } = executivesSlice.actions;
 
 export default executivesSlice.reducer;

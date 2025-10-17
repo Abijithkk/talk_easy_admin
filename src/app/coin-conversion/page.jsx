@@ -134,12 +134,6 @@ const RedemptionOptions = () => {
     }
   };
 
-  // Handle modal close
-  const handleModalClose = () => {
-    setIsConversionModalOpen(false);
-    setSelectedOption(null);
-    setModalMode('add');
-  };
 
 
   // Format date
