@@ -215,7 +215,7 @@ const ExecutiveProfilePicturesPage = () => {
               page: pagination.pageIndex + 1,
               limit: pagination.pageSize
             }))}
-            variant="outline"
+            variant="edit"
             className="mt-4 border-red-300 text-red-700 hover:bg-red-50"
           >
             Try Again
@@ -248,7 +248,7 @@ const ExecutiveProfilePicturesPage = () => {
               page: pagination.pageIndex + 1,
               limit: pagination.pageSize
             }))}
-            variant="outline"
+            variant="edit"
             size="lg"
             disabled={loading}
             className="border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors"
@@ -335,7 +335,7 @@ const ExecutiveProfilePicturesPage = () => {
                         
                         <Button
                           onClick={() => handleReject(picture.id)}
-                          variant="outline"
+                          variant="edit"
                           size="sm"
                           disabled={updatingPicture === picture.id}
                           className="flex-1 border-gray-300 text-gray-700 hover:bg-gray-100 hover:text-black font-medium transition-colors"
@@ -397,7 +397,7 @@ const ExecutiveProfilePicturesPage = () => {
                 page: 1,
                 limit: pagination.pageSize
               }))}
-              variant="outline"
+              variant="edit"
               className="border-gray-300 text-gray-700 hover:bg-gray-100"
             >
               <RefreshCw className="w-4 h-4 mr-2" />
