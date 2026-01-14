@@ -12,7 +12,6 @@ import adminProfileReducer from "./slices/adminProfileSlice.js";
 import dashboardReducer from "./slices/dashboardSlice.js"
 import carouselReducer from "./slices/carouselSlice.js"
 import referralReducer from "./slices/referralSlice.js"
-import executivePaymentReducer from "./slices/exePaymentRequestSlice.js"
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -26,8 +25,7 @@ export const store = configureStore({
     adminProfile: adminProfileReducer,
     dashboard: dashboardReducer,
     carousel: carouselReducer,
-    referrals: referralReducer,
-    executivePaymentRequest: executivePaymentReducer
+    referrals: referralReducer
 
     
 
