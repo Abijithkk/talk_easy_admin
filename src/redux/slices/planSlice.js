@@ -50,7 +50,7 @@ export const createPlan = createAsyncThunk(
       const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       const response = await axios.post(
-        `${BASE_URL}//plans/`,
+        `${BASE_URL}/payments/plans/`,
         planData,
         {
           headers: {

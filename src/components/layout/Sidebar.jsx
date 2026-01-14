@@ -35,17 +35,13 @@ export default function Sidebar() {
       items: [{ path: "/dashboard", icon: <FaHome size={20} />, label: "Dashboard" }],
     },
     {
-      category: "Profile",
-        items:[{
+      category: "User Management",
+      items: [
+        {
           path: "/profile",
           icon: <FaUser size={20} />,
           label: "My Profile",
-        }],
-    },
-    {
-      category: "User Management",
-      items: [
-      
+        },
         { path: "/user", icon: <FaUsers size={20} />, label: "All Users" },
         {
           path: "/blocked-users",
@@ -82,6 +78,7 @@ export default function Sidebar() {
         { path: "/review", icon: <FaFileAlt size={20} />, label: "Reviews" },
         { path: "/reports", icon: <FaFileAlt size={20} />, label: "Reports" },
         { path: "/carousel", icon: <FaImage size={20} />, label: "Carousels" },
+
       ],
     },
     {
@@ -163,7 +160,7 @@ export default function Sidebar() {
           border-r border-gray-700
           shadow-xl
           flex flex-col
-        `}
+  `}
       >
         {/* Header Section */}
         <div className="p-6 border-b border-gray-700 flex-shrink-0 relative h-28">
@@ -201,7 +198,13 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-4 custom-scrollbar">
+        <nav className="flex-1 overflow-y-auto py-4 px-4 
+          scrollbar-thin 
+          scrollbar-thumb-gray-600 
+          scrollbar-track-gray-800 
+          hover:scrollbar-thumb-gray-500 
+          scrollbar-thumb-rounded-full
+          scrollbar-track-rounded-full">
           <div className="space-y-1">
             {menuItems.map((section, index) => (
               <div key={section.category} className="mb-2">
@@ -223,14 +226,14 @@ export default function Sidebar() {
                         key={item.path}
                         href={item.path}
                         className={`
-                          w-full flex items-center p-3 rounded-lg transition-all duration-200
-                          ${
-                            isActive
-                              ? "bg-indigo-600 text-gray-100 shadow-md"
-                              : "text-gray-300 hover:bg-gray-700 hover:text-gray-100"
-                          }
-                          ${isCollapsed ? "justify-center" : "justify-start"}
-                        `}
+                    w-full flex items-center p-3 rounded-lg transition-all duration-200
+                    ${
+                      isActive
+                        ? "bg-indigo-600 text-gray-100 shadow-md"
+                        : "text-gray-300 hover:bg-gray-700 hover:text-gray-100"
+                    }
+                    ${isCollapsed ? "justify-center" : "justify-start"}
+                  `}
                         onClick={() => setMobileOpen(false)}
                         title={isCollapsed ? item.label : ""}
                       >
@@ -263,10 +266,10 @@ export default function Sidebar() {
         <div className="p-4 border-t border-gray-700 flex-shrink-0">
           <button
             className={`
-              w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200
-              text-gray-300 hover:bg-red-600 hover:text-gray-100
-              ${isCollapsed ? "justify-center" : ""}
-            `}
+        w-full flex items-center space-x-3 p-3 rounded-lg transition-all duration-200
+        text-gray-300 hover:bg-red-600 hover:text-gray-100
+        ${isCollapsed ? "justify-center" : ""}
+      `}
             title={isCollapsed ? "Logout" : ""}
           >
             <FaSignOutAlt size={20} />

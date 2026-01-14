@@ -42,7 +42,7 @@ export function DataTablePagination({ table }) {
           <SelectTrigger className="h-8 w-[70px]">
             <SelectValue />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50 bg-[#FFFF]">  
             {[10, 20, 30, 40, 50].map((pageSize) => (
               <SelectItem key={pageSize} value={`${pageSize}`}>
                 {pageSize}
@@ -52,7 +52,7 @@ export function DataTablePagination({ table }) {
         </Select>
       </div>
 
-      {/* Page info and navigation */}
+      {/* Rest of your component remains the same */}
       <div className="flex items-center gap-4">
         <div className="text-sm text-gray-700">
           Page {currentPage} of {totalPages}
@@ -60,7 +60,7 @@ export function DataTablePagination({ table }) {
         
         <div className="flex items-center gap-1">
           <Button
-            variant="outline"
+            variant="edit"
             className="h-8 w-8 p-0"
             onClick={goToFirstPage}
             disabled={!table.getCanPreviousPage()}
@@ -69,7 +69,7 @@ export function DataTablePagination({ table }) {
           </Button>
           
           <Button
-            variant="outline"
+            variant="edit"
             className="h-8 w-8 p-0"
             onClick={goToPreviousPage}
             disabled={!table.getCanPreviousPage()}
@@ -83,7 +83,7 @@ export function DataTablePagination({ table }) {
             ) : (
               <Button
                 key={index}
-                variant={currentPage === pageNumber ? "default" : "outline"}
+                variant={currentPage === pageNumber ? "default" : "edit"}
                 className="h-8 w-8 p-0 text-sm"
                 onClick={() => goToPage(pageNumber)}
               >
@@ -93,7 +93,7 @@ export function DataTablePagination({ table }) {
           ))}
 
           <Button
-            variant="outline"
+            variant="edit"
             className="h-8 w-8 p-0"
             onClick={goToNextPage}
             disabled={!table.getCanNextPage()}
@@ -102,7 +102,7 @@ export function DataTablePagination({ table }) {
           </Button>
           
           <Button
-            variant="outline"
+            variant="edit"
             className="h-8 w-8 p-0"
             onClick={goToLastPage}
             disabled={!table.getCanNextPage()}
