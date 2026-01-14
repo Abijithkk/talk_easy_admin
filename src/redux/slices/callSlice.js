@@ -44,27 +44,6 @@ export const fetchCallById = createAsyncThunk(
   }
 );
 
-// GET - Fetch ongoing calls
-export const fetchOngoingCalls = createAsyncThunk(
-  "calls/fetchOngoingCalls",
-  async (_, { rejectWithValue }) => {
-    try {
-      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-
-      const response = await axios.get(`${BASE_URL}/calls/ongoing/`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : undefined,
-        },
-      });
-console.log(response)
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data || "Failed to fetch ongoing calls");
-    }
-  }
-);
-
-
 const callSlice = createSlice({
   name: "calls",
   initialState: {
@@ -73,13 +52,10 @@ const callSlice = createSlice({
       count: 0
     },
     currentCall: null, 
-    ongoingCalls: [], 
     loading: false,
     error: null,
     currentCallLoading: false,
     currentCallError: null,
-    ongoingCallsLoading: false,
-    ongoingCallsError: null,
   },
   reducers: {
     clearCallsError: (state) => {
@@ -91,25 +67,9 @@ const callSlice = createSlice({
     clearCurrentCall: (state) => {
       state.currentCall = null;
     },
-    clearOngoingCallsError: (state) => {
-      state.ongoingCallsError = null;
-    },
-    clearOngoingCalls: (state) => {
-      state.ongoingCalls = []; // Update this
-    },
     clearAllCallStates: (state) => {
       state.error = null;
       state.currentCallError = null;
-      state.ongoingCallsError = null;
-    },
-    // Optional: Add a reducer to manually add/remove ongoing calls in real-time
-    addOngoingCall: (state, action) => {
-      state.ongoingCalls.push(action.payload); // Update this
-    },
-    removeOngoingCall: (state, action) => {
-      state.ongoingCalls = state.ongoingCalls.filter(
-        call => call.id !== action.payload
-      ); // Update this
     },
   },
   extraReducers: (builder) => {
@@ -140,32 +100,15 @@ const callSlice = createSlice({
       .addCase(fetchCallById.rejected, (state, action) => {
         state.currentCallLoading = false;
         state.currentCallError = action.payload;
-      })
-
-      // Fetch Ongoing Calls - UPDATED
-      .addCase(fetchOngoingCalls.pending, (state) => {
-        state.ongoingCallsLoading = true;
-        state.ongoingCallsError = null;
-      })
-      .addCase(fetchOngoingCalls.fulfilled, (state, action) => {
-        state.ongoingCallsLoading = false;
-        state.ongoingCalls = action.payload; // This is now the array directly
-      })
-      .addCase(fetchOngoingCalls.rejected, (state, action) => {
-        state.ongoingCallsLoading = false;
-        state.ongoingCallsError = action.payload;
       });
   },
 });
+
 export const { 
   clearCallsError, 
   clearCurrentCallError,
   clearCurrentCall,
-  clearOngoingCallsError,
-  clearOngoingCalls,
-  clearAllCallStates,
-  addOngoingCall,
-  removeOngoingCall
+  clearAllCallStates
 } = callSlice.actions;
 
 export default callSlice.reducer;
