@@ -50,17 +50,45 @@ const handleSubmit = async (e) => {
     
     if (loginUser.fulfilled.match(resultAction)) {
       toast.success('Login successful! Redirecting...');
-       setTimeout(() => {
-          router.push('/');
-        }, 1500);
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 1500);
       
     } else if (loginUser.rejected.match(resultAction)) {
-      const errorMessage = resultAction.payload || 'Login failed. Please try again.';
+      // Safely extract error message from the payload
+      let errorMessage = 'Login failed. Please try again.';
+      
+      if (resultAction.payload) {
+        // Handle different possible payload structures
+        if (typeof resultAction.payload === 'string') {
+          errorMessage = resultAction.payload;
+        } else if (resultAction.payload.message) {
+          errorMessage = resultAction.payload.message;
+        } else if (resultAction.payload.detail) {
+          errorMessage = resultAction.payload.detail;
+        } else if (resultAction.payload.error) {
+          errorMessage = resultAction.payload.error;
+        }
+      }
+      
       toast.error(errorMessage);
     }
   } catch (error) {
     console.error('Login error:', error);
-    toast.error('An unexpected error occurred. Please try again.');
+    // Handle unexpected errors
+    let unexpectedErrorMessage = 'An unexpected error occurred. Please try again.';
+    
+    if (error && typeof error === 'object') {
+      if (error.message) {
+        unexpectedErrorMessage = error.message;
+      } else if (error.detail) {
+        unexpectedErrorMessage = error.detail;
+      }
+    } else if (typeof error === 'string') {
+      unexpectedErrorMessage = error;
+    }
+    
+    toast.error(unexpectedErrorMessage);
   } finally {
     setIsLoading(false);
   }

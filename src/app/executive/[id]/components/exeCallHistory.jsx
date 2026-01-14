@@ -1,38 +1,38 @@
 "use client";
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { fetchExecutiveCallHistory } from '@/redux/slices/executiveSlice';
 import { useParams } from 'next/navigation';
-import { fetchUserCallHistory } from '@/redux/slices/userSlice';
 
 const CallHistoryPage = () => {
   const dispatch = useDispatch();
   const params = useParams();
-  const userId = params.id;
+  const executiveId = params.id;
 
-  const { userCallHistory, userCallHistoryLoading, userCallHistoryError } = useSelector(state => state.users);
+  const { callHistory, callHistoryLoading, callHistoryError } = useSelector(state => state.executives);
 
   useEffect(() => {
-    if (userId) {
-      dispatch(fetchUserCallHistory(userId));
+    if (executiveId) {
+      dispatch(fetchExecutiveCallHistory(executiveId));
     }
-  }, [dispatch, userId]);
+  }, [dispatch, executiveId]);
 
-  if (userCallHistoryLoading) {
+  if (callHistoryLoading) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading user call history...</p>
+          <p className="mt-2 text-gray-600">Loading executive call history...</p>
         </div>
       </div>
     );
   }
 
-  if (userCallHistoryError) {
+  if (callHistoryError) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
         <div className="text-center text-red-600">
-          <p>Failed to load user call history</p>
+          <p>Failed to load call history</p>
         </div>
       </div>
     );
@@ -44,14 +44,18 @@ const CallHistoryPage = () => {
         <h2 className="text-xl font-bold text-gray-900">Call History</h2>
         <div className="flex items-center space-x-4">
           <span className="text-sm text-gray-600">
-            Total Calls: <span className="font-semibold text-gray-900">{userCallHistory?.count || 0}</span>
+            Total Calls: <span className="font-semibold text-gray-900">{callHistory?.count || 0}</span>
           </span>
-       
-         
+          <span className="text-sm text-gray-600">
+            Executive: <span className="font-semibold text-gray-900">{callHistory?.results?.[0]?.executive_name || 'N/A'}</span>
+          </span>
+          <span className="text-sm text-gray-600">
+            ID: <span className="font-semibold text-gray-900">{callHistory?.results?.[0]?.executive_id || 'N/A'}</span>
+          </span>
         </div>
       </div>
 
-      {!userCallHistory?.results || userCallHistory.results.length === 0 ? (
+      {!callHistory?.results || callHistory.results.length === 0 ? (
         <div className="text-center py-8">
           <div className="text-gray-400 mb-2">
             <svg className="w-16 h-16 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -77,7 +81,7 @@ const CallHistoryPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     User ID
                   </th>
-                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Executive ID
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
@@ -104,7 +108,7 @@ const CallHistoryPage = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {userCallHistory.results.map((call) => (
+                {callHistory.results.map((call) => (
                   <tr key={call.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{call.id}</div>
@@ -115,7 +119,7 @@ const CallHistoryPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{call.user_id || 'N/A'}</div>
                     </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{call.executive_id || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -130,12 +134,12 @@ const CallHistoryPage = () => {
                       <div className="text-sm font-medium text-green-600">₹{call.executive_earnings || '0.00'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 ">
+                      <div className="text-sm text-gray-900 text-xs">
                         {formatDateTime(call.start_time)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 ">
+                      <div className="text-sm text-gray-900 text-xs">
                         {call.end_time ? formatDateTime(call.end_time) : 'N/A'}
                       </div>
                     </td>
