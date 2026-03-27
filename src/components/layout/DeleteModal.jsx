@@ -31,7 +31,7 @@ const DeleteConfirmationModal = ({ isOpen, onClose, onConfirm, itemName }) => {
           </p>
           
           <div className="flex justify-end space-x-3">
-            <Button variant="outline" onClick={onClose}>
+            <Button variant="edit" onClick={onClose}>
               Cancel
             </Button>
             <Button variant="delete" onClick={onConfirm}>

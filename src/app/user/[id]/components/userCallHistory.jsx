@@ -77,6 +77,9 @@ const CallHistoryPage = () => {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     User ID
                   </th>
+                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
+                    Executive ID
+                  </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">
                     Duration
                   </th>
@@ -112,6 +115,9 @@ const CallHistoryPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">{call.user_id || 'N/A'}</div>
                     </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{call.executive_id || 'N/A'}</div>
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm text-gray-900">
                         {call.duration_seconds ? `${call.duration_seconds}s` : 'N/A'}
@@ -124,12 +130,12 @@ const CallHistoryPage = () => {
                       <div className="text-sm font-medium text-green-600">₹{call.executive_earnings || '0.00'}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 text-xs">
+                      <div className="text-sm text-gray-900 ">
                         {formatDateTime(call.start_time)}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900 text-xs">
+                      <div className="text-sm text-gray-900 ">
                         {call.end_time ? formatDateTime(call.end_time) : 'N/A'}
                       </div>
                     </td>

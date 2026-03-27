@@ -22,6 +22,78 @@ export const fetchRedemptionOptions = createAsyncThunk(
   }
 );
 
+// POST - Create new redemption option
+export const createRedemptionOption = createAsyncThunk(
+  "payments/createRedemptionOption",
+  async (optionData, { rejectWithValue }) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await axios.post(
+        `${BASE_URL}/payments/redemption-options/`,
+        optionData,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "Failed to create redemption option");
+    }
+  }
+);
+
+// PATCH - Update redemption option
+export const updateRedemptionOption = createAsyncThunk(
+  "payments/updateRedemptionOption",
+  async ({ id, data }, { rejectWithValue }) => { // Changed from optionData to data
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      const response = await axios.patch(
+        `${BASE_URL}/payments/redemption-options/${id}/`,
+        data, // Use data instead of optionData
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      return response.data;
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "Failed to update redemption option");
+    }
+  }
+);
+// DELETE - Delete redemption option
+export const deleteRedemptionOption = createAsyncThunk(
+  "payments/deleteRedemptionOption",
+  async (id, { rejectWithValue }) => {
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+      await axios.delete(
+        `${BASE_URL}/payments/redemption-options/${id}/`,
+        {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : undefined,
+          },
+        }
+      );
+
+      return id; // Return the deleted ID
+    } catch (error) {
+      return rejectWithValue(error.response?.data || "Failed to delete redemption option");
+    }
+  }
+);
+
 // GET - Fetch single redemption option by ID
 export const fetchRedemptionOptionById = createAsyncThunk(
   "payments/fetchRedemptionOptionById",
@@ -54,7 +126,7 @@ export const fetchRedeems = createAsyncThunk(
           Authorization: token ? `Bearer ${token}` : undefined,
         },
       });
-      console.log(response)
+      console.log("API Response:", response.data); // Debug log
 
       return response.data;
     } catch (error) {
@@ -90,6 +162,8 @@ export const updateRedeem = createAsyncThunk(
   }
 );
 
+
+
 const paymentSlice = createSlice({
   name: "payments",
   initialState: {
@@ -112,6 +186,12 @@ const paymentSlice = createSlice({
     updateRedeemLoading: false,
     updateRedeemError: null,
     updateRedeemSuccess: null,
+    createRedemptionOptionLoading: false,
+    createRedemptionOptionError: null,
+    createRedemptionOptionSuccess: null,
+    updateRedemptionOptionLoading: false,
+    updateRedemptionOptionError: null,
+    updateRedemptionOptionSuccess: null,
   },
   reducers: {
     clearPaymentsError: (state) => {
@@ -135,6 +215,18 @@ const paymentSlice = createSlice({
     clearUpdateRedeemSuccess: (state) => {
       state.updateRedeemSuccess = null;
     },
+    clearCreateRedemptionOptionError: (state) => {
+      state.createRedemptionOptionError = null;
+    },
+    clearCreateRedemptionOptionSuccess: (state) => {
+      state.createRedemptionOptionSuccess = null;
+    },
+    clearUpdateRedemptionOptionError: (state) => {
+      state.updateRedemptionOptionError = null;
+    },
+    clearUpdateRedemptionOptionSuccess: (state) => {
+      state.updateRedemptionOptionSuccess = null;
+    },
     clearAllPaymentStates: (state) => {
       state.error = null;
       state.success = null;
@@ -142,6 +234,10 @@ const paymentSlice = createSlice({
       state.redeemsError = null;
       state.updateRedeemError = null;
       state.updateRedeemSuccess = null;
+      state.createRedemptionOptionError = null;
+      state.createRedemptionOptionSuccess = null;
+      state.updateRedemptionOptionError = null;
+      state.updateRedemptionOptionSuccess = null;
     },
   },
   extraReducers: (builder) => {
@@ -158,6 +254,57 @@ const paymentSlice = createSlice({
       .addCase(fetchRedemptionOptions.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+
+      // Create Redemption Option
+      .addCase(createRedemptionOption.pending, (state) => {
+        state.createRedemptionOptionLoading = true;
+        state.createRedemptionOptionError = null;
+        state.createRedemptionOptionSuccess = null;
+      })
+      .addCase(createRedemptionOption.fulfilled, (state, action) => {
+        state.createRedemptionOptionLoading = false;
+        state.createRedemptionOptionSuccess = "Redemption option created successfully";
+        
+        // Add new option to the list
+        if (state.redemptionOptions?.results) {
+          state.redemptionOptions.results.push(action.payload);
+          state.redemptionOptions.count += 1;
+        }
+      })
+      .addCase(createRedemptionOption.rejected, (state, action) => {
+        state.createRedemptionOptionLoading = false;
+        state.createRedemptionOptionError = action.payload;
+      })
+
+      // Update Redemption Option
+      .addCase(updateRedemptionOption.pending, (state) => {
+        state.updateRedemptionOptionLoading = true;
+        state.updateRedemptionOptionError = null;
+        state.updateRedemptionOptionSuccess = null;
+      })
+      .addCase(updateRedemptionOption.fulfilled, (state, action) => {
+        state.updateRedemptionOptionLoading = false;
+        state.updateRedemptionOptionSuccess = "Redemption option updated successfully";
+        
+        // Update the option in the list
+        if (state.redemptionOptions?.results) {
+          const index = state.redemptionOptions.results.findIndex(
+            option => option.id === action.payload.id
+          );
+          if (index !== -1) {
+            state.redemptionOptions.results[index] = action.payload;
+          }
+        }
+        
+        // Update current option if it's the same one
+        if (state.currentRedemptionOption?.id === action.payload.id) {
+          state.currentRedemptionOption = action.payload;
+        }
+      })
+      .addCase(updateRedemptionOption.rejected, (state, action) => {
+        state.updateRedemptionOptionLoading = false;
+        state.updateRedemptionOptionError = action.payload;
       })
 
       // Fetch Single Redemption Option by ID
@@ -181,7 +328,18 @@ const paymentSlice = createSlice({
       })
       .addCase(fetchRedeems.fulfilled, (state, action) => {
         state.redeemsLoading = false;
-        state.redeems = action.payload;
+        
+        // Handle both array and object responses
+        if (Array.isArray(action.payload)) {
+          state.redeems = {
+            results: action.payload,
+            count: action.payload.length
+          };
+        } else {
+          state.redeems = action.payload;
+        }
+        
+        console.log("Stored in Redux - redeems:", state.redeems); // Debug log
       })
       .addCase(fetchRedeems.rejected, (state, action) => {
         state.redeemsLoading = false;
@@ -223,6 +381,10 @@ export const {
   clearRedeemsError,
   clearUpdateRedeemError,
   clearUpdateRedeemSuccess,
+  clearCreateRedemptionOptionError,
+  clearCreateRedemptionOptionSuccess,
+  clearUpdateRedemptionOptionError,
+  clearUpdateRedemptionOptionSuccess,
   clearAllPaymentStates
 } = paymentSlice.actions;
 

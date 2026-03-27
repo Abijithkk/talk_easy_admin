@@ -1,32 +1,57 @@
 "use client";
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   fetchExecutives,
   suspendExecutive,
   updateExecutiveBanStatus,
   updateExecutive,
+  searchExecutives,
+  clearSearchResults,
 } from "@/redux/slices/executiveSlice";
 import { Button } from "@/components/ui/Button";
 import { DataTablePagination } from "@/components/layout/Pagination";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
-import {  UserX } from "lucide-react";
-import { Pencil } from "lucide-react";
-import { Image } from "lucide-react";
+import { UserX, Search, X, Pencil, Image } from "lucide-react";
 
 function ExecutiveDashboard() {
   const dispatch = useDispatch();
-  const { executives, loading, error } = useSelector(
-    (state) => state.executives
-  );
+  const { 
+    executives, 
+    searchResults, 
+    loading, 
+    searchLoading, 
+    error 
+  } = useSelector((state) => state.executives);
+
   const [pagination, setPagination] = useState({
     pageIndex: 0,
     pageSize: 10,
   });
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const [updatingExecutive, setUpdatingExecutive] = useState(null);
   const [updatingStatus, setUpdatingStatus] = useState(null);
   const router = useRouter();
+
+  // Determine which data to display
+  const displayData = useMemo(() => {
+    return isSearching ? searchResults : executives;
+  }, [isSearching, searchResults, executives]);
+
+  // Helper function to get results array safely
+  const getResultsArray = useCallback((data) => {
+    if (!data) return [];
+    return Array.isArray(data) ? data : data.results || [];
+  }, []);
+
+  // Helper function to get count safely
+  const getResultsCount = useCallback((data) => {
+    if (!data) return 0;
+    if (Array.isArray(data)) return data.length;
+    return data.count || (data.results ? data.results.length : 0);
+  }, []);
 
   const handleAddExecutive = () => {
     router.push("/executive/add");
@@ -45,15 +70,15 @@ function ExecutiveDashboard() {
         setPagination((prev) => ({ ...prev, pageSize, pageIndex: 0 }));
       },
       getPageCount: () => {
-        if (!executives?.count) return 1;
-        return Math.ceil(executives.count / pagination.pageSize);
+        const count = getResultsCount(displayData);
+        if (!count) return 1;
+        return Math.ceil(count / pagination.pageSize);
       },
       getCanPreviousPage: () => pagination.pageIndex > 0,
       getCanNextPage: () => {
-        if (!executives?.count) return false;
-        return (
-          (pagination.pageIndex + 1) * pagination.pageSize < executives.count
-        );
+        const count = getResultsCount(displayData);
+        if (!count) return false;
+        return (pagination.pageIndex + 1) * pagination.pageSize < count;
       },
       previousPage: () => {
         setPagination((prev) => ({
@@ -68,25 +93,85 @@ function ExecutiveDashboard() {
         }));
       },
     }),
-    [pagination, executives?.count]
+    [pagination, displayData, getResultsCount]
   );
 
+  // Fetch executives with pagination
+  const fetchExecutivesData = useCallback(() => {
+    const params = {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+    };
+
+    if (isSearching && searchQuery.trim()) {
+      dispatch(searchExecutives({ ...params, query: searchQuery }))
+        .unwrap()
+        .then((res) => {
+          console.log("Search completed:", res);
+        })
+        .catch((err) => {
+          console.error("Search failed:", err);
+          toast.error("Search failed");
+        });
+    } else {
+      dispatch(fetchExecutives(params))
+        .unwrap()
+        .then((res) => {
+          console.log("Executives fetched successfully:", res);
+        })
+        .catch((err) => {
+          console.error("Failed to fetch executives:", err);
+          toast.error("Failed to load executives");
+        });
+    }
+  }, [dispatch, pagination.pageIndex, pagination.pageSize, isSearching, searchQuery]);
+
+  // Initial load and pagination changes
   useEffect(() => {
-    dispatch(
-      fetchExecutives({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-      })
-    )
+    fetchExecutivesData();
+  }, [fetchExecutivesData]);
+
+  // Handle manual search with button
+  const handleSearch = () => {
+    if (!searchQuery.trim()) {
+      toast.error("Please enter a search term");
+      return;
+    }
+
+    setIsSearching(true);
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    
+    dispatch(searchExecutives({ 
+      query: searchQuery, 
+      page: 1, 
+      limit: pagination.pageSize 
+    }))
       .unwrap()
       .then((res) => {
-        console.log("Executives fetched successfully:", res);
+        console.log("Search completed:", res);
+        const count = getResultsCount(res);
+        toast.success(`Found ${count} executive${count !== 1 ? 's' : ''}`);
       })
       .catch((err) => {
-        console.error("Failed to fetch executives:", err);
-        toast.error("Failed to load executives");
+        console.error("Search failed:", err);
+        toast.error("Search failed");
       });
-  }, [dispatch, pagination.pageIndex, pagination.pageSize]);
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchQuery("");
+    setIsSearching(false);
+    dispatch(clearSearchResults());
+    setPagination(prev => ({ ...prev, pageIndex: 0 }));
+  };
+
+  // Handle Enter key for search
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
 
   // Function to generate gradient based on name
   const getAvatarGradient = (name) => {
@@ -102,31 +187,19 @@ function ExecutiveDashboard() {
   };
 
   // Toggle suspend status
-  const handleToggleSuspend = async (
-    executiveId,
-    currentStatus,
-    executiveName
-  ) => {
+  const handleToggleSuspend = async (executiveId, currentStatus, executiveName) => {
     const id = String(executiveId);
-
     setUpdatingExecutive(id);
     setUpdatingStatus("suspend");
 
     try {
-      const result = await dispatch(suspendExecutive(id)).unwrap();
-
+      await dispatch(suspendExecutive(id)).unwrap();
       toast.success(
         `${executiveName} has been ${
           !currentStatus ? "suspended" : "activated"
         } successfully`
       );
-
-      dispatch(
-        fetchExecutives({
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-        })
-      );
+      fetchExecutivesData();
     } catch (error) {
       console.error("Failed to update executive status:", error);
       toast.error(`Failed to update ${executiveName}'s status`);
@@ -139,30 +212,22 @@ function ExecutiveDashboard() {
   // Toggle ban status
   const handleToggleBan = async (executiveId, currentStatus, executiveName) => {
     const id = String(executiveId);
-
     setUpdatingExecutive(id);
     setUpdatingStatus("ban");
 
     try {
-      const result = await dispatch(
+      await dispatch(
         updateExecutiveBanStatus({
           executiveId: id,
           is_banned: !currentStatus,
         })
       ).unwrap();
-
       toast.success(
         `${executiveName} has been ${
           !currentStatus ? "banned" : "unbanned"
         } successfully`
       );
-
-      dispatch(
-        fetchExecutives({
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-        })
-      );
+      fetchExecutivesData();
     } catch (error) {
       console.error("Failed to update ban status:", error);
       toast.error(`Failed to update ${executiveName}'s ban status`);
@@ -173,18 +238,13 @@ function ExecutiveDashboard() {
   };
 
   // Toggle online status
-  const handleToggleOnline = async (
-    executiveId,
-    currentStatus,
-    executiveName
-  ) => {
+  const handleToggleOnline = async (executiveId, currentStatus, executiveName) => {
     const id = String(executiveId);
-
     setUpdatingExecutive(id);
     setUpdatingStatus("online");
 
     try {
-      const result = await dispatch(
+      await dispatch(
         updateExecutive({
           id: id,
           executiveData: {
@@ -193,19 +253,12 @@ function ExecutiveDashboard() {
           },
         })
       ).unwrap();
-
       toast.success(
         `${executiveName} has been set to ${
           !currentStatus ? "online" : "offline"
         } successfully`
       );
-
-      dispatch(
-        fetchExecutives({
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-        })
-      );
+      fetchExecutivesData();
     } catch (error) {
       console.error("Failed to update online status:", error);
       toast.error(`Failed to update ${executiveName}'s online status`);
@@ -215,7 +268,11 @@ function ExecutiveDashboard() {
     }
   };
 
-  if (loading) {
+  const isLoading = loading || searchLoading;
+  const resultsArray = getResultsArray(displayData);
+  const resultsCount = getResultsCount(displayData);
+
+  if (isLoading && !resultsArray.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -223,7 +280,7 @@ function ExecutiveDashboard() {
     );
   }
 
-  if (error) {
+  if (error && !resultsArray.length) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md w-full">
@@ -258,62 +315,119 @@ function ExecutiveDashboard() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-8xl mx-auto px-4 sm:px-4 lg:px-4">
-      {/* Header with Add Button */}
-<div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-  <div className="mb-4 sm:mb-0">
-    <h1 className="text-3xl font-bold text-gray-900">
-      Executive Dashboard
-    </h1>
-    {executives?.count && (
-      <p className="text-gray-600 mt-2">
-        Showing {executives.results?.length || 0} of {executives.count}{" "}
-        executives
-      </p>
-    )}
-  </div>
-  
-  {/* Button Group */}
-  <div className="flex items-center gap-3">
-     <Button
-      onClick={() => router.push("/executive/profile")}
-      variant="secondary"
-      size="lg"
-      >
-      <Image className="w-4 h-4 mr-2" />
-      Profiles
-    </Button>
-    <Button
-      onClick={() => router.push("/executive/verify")}
-      variant="secondary"
-      size="lg"
-            >
-      <UserX className="w-4 h-4 mr-2" />
-      Unverified
-    </Button>
-    
-    {/* Add Executive Button */}
-    <Button onClick={handleAddExecutive} variant="default" size="lg">
-      <svg
-        className="w-5 h-5 mr-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 4v16m8-8H4"
-        />
-      </svg>
-      Add Executive
-    </Button>
-  </div>
-</div>
+        {/* Header with Search and Add Button */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Executive Dashboard
+              {isSearching && (
+                <span className="text-lg font-normal text-blue-600 ml-2">
+                  (Search Results)
+                </span>
+              )}
+            </h1>
+            {resultsCount !== undefined && (
+              <p className="text-gray-600 mt-2">
+                Showing {resultsArray.length} of {resultsCount}{" "}
+                executives
+                {isSearching && searchQuery && (
+                  <span className="text-blue-600"> for "{searchQuery}"</span>
+                )}
+              </p>
+            )}
+          </div>
+          
+          {/* Search and Button Group */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {/* Search Bar */}
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, or ID..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className="w-64 pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={handleClearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
+              </div>
+              <Button
+                onClick={handleSearch}
+                disabled={!searchQuery.trim() || searchLoading}
+                variant="default"
+                size="lg"
+              >
+                {searchLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                ) : (
+                  <Search className="w-4 h-4 mr-2" />
+                )}
+                Search
+              </Button>
+            </div>
+
+            {/* Button Group */}
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => router.push("/executive/profile")}
+                variant="secondary"
+                size="lg"
+              >
+                <Image className="w-4 h-4 mr-2" />
+                Profiles
+              </Button>
+              <Button
+                onClick={() => router.push("/executive/verify")}
+                variant="secondary"
+                size="lg"
+              >
+                <UserX className="w-4 h-4 mr-2" />
+                Unverified
+              </Button>
+              
+              {/* Add Executive Button */}
+              <Button onClick={handleAddExecutive} variant="default" size="lg">
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add Executive
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading indicator for search */}
+        {searchLoading && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+              <span className="text-blue-700 font-medium">Searching executives...</span>
+            </div>
+          </div>
+        )}
 
         {/* Executive Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          {executives?.results?.map((executive) => (
+          {resultsArray.map((executive) => (
             <div
               key={executive.id}
               className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group"
@@ -328,7 +442,7 @@ function ExecutiveDashboard() {
                     e.stopPropagation();
                     router.push(`/executive/edit/${executive.id}`);
                   }}
-                  className="absolute top-3 right-3 p-2 text-gray-400 hover:text-blue-600  rounded-lg transition-all duration-200 cursor-pointer"
+                  className="absolute top-3 right-3 p-2 text-gray-400 hover:text-blue-600 rounded-lg transition-all duration-200 cursor-pointer"
                   title="Edit Executive"
                 >
                   <Pencil className="w-4 h-4 text-white" />
@@ -633,7 +747,7 @@ function ExecutiveDashboard() {
         </div>
 
         {/* Empty State */}
-        {(!executives?.results || executives.results.length === 0) && (
+        {resultsArray.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <svg
@@ -651,32 +765,42 @@ function ExecutiveDashboard() {
               </svg>
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">
-              No executives found
+              {isSearching ? "No executives found" : "No executives found"}
             </h3>
             <p className="text-gray-500 mb-6 max-w-md mx-auto">
-              Get started by adding your first executive to the dashboard.
+              {isSearching 
+                ? `No executives found for "${searchQuery}". Try a different search term.`
+                : "Get started by adding your first executive to the dashboard."
+              }
             </p>
-            <Button onClick={handleAddExecutive} variant="default" size="lg">
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 4v16m8-8H4"
-                />
-              </svg>
-              Add First Executive
-            </Button>
+            {isSearching ? (
+              <Button onClick={handleClearSearch} variant="default" size="lg">
+                <X className="w-5 h-5 mr-2" />
+                Clear Search
+              </Button>
+            ) : (
+              <Button onClick={handleAddExecutive} variant="default" size="lg">
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                Add First Executive
+              </Button>
+            )}
           </div>
         )}
 
         {/* Pagination Component */}
-        {executives?.results && executives.results.length > 0 && (
+        {resultsArray.length > 0 && (
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <DataTablePagination table={table} />
           </div>

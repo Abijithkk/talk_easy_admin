@@ -1,5 +1,5 @@
 "use client";
-import { fetchUsers, updateUserStatus } from "@/redux/slices/userSlice";
+import { fetchUsers, filterUsersByStatus, searchUsers, updateUserStatus } from "@/redux/slices/userSlice";
 import { useEffect, useState, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Button } from "@/components/ui/Button";
@@ -11,13 +11,13 @@ import {
   PhoneCall,
   Clock,
   User,
-  Shield,
   Ban,
   AlertTriangle,
   CheckCircle,
   XCircle,
-  MoreVertical,
-  Edit,
+  Search,
+  Filter,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
@@ -31,8 +31,14 @@ export default function UsersPage() {
     pageIndex: 0,
     pageSize: 10,
   });
-    const router = useRouter();
+
+  const router = useRouter();
   
+  // Search and filter states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [isSearching, setIsSearching] = useState(false);
+  const [isFiltering, setIsFiltering] = useState(false);
 
   const [statusUpdateLoading, setStatusUpdateLoading] = useState(null);
 
@@ -73,13 +79,15 @@ export default function UsersPage() {
     [pagination, users?.count]
   );
 
-  useEffect(() => {
-    dispatch(
-      fetchUsers({
-        page: pagination.pageIndex + 1,
-        limit: pagination.pageSize,
-      })
-    )
+  // Fetch users with current filters and search
+  const fetchUsersWithParams = (params = {}) => {
+    const baseParams = {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      ...params,
+    };
+
+    dispatch(fetchUsers(baseParams))
       .unwrap()
       .then((res) => {
         console.log("Users fetched successfully:", res);
@@ -88,7 +96,72 @@ export default function UsersPage() {
         console.error("Failed to fetch users:", err);
         toast.error("Failed to load users");
       });
+  };
+
+  useEffect(() => {
+    fetchUsersWithParams();
   }, [dispatch, pagination.pageIndex, pagination.pageSize]);
+
+  // Handle search
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      // If search query is empty, reset to normal fetch
+      fetchUsersWithParams();
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      await dispatch(
+        searchUsers({
+          q: searchQuery,
+          page: pagination.pageIndex + 1,
+          limit: pagination.pageSize,
+        })
+      ).unwrap();
+      toast.success(`Search results for "${searchQuery}"`);
+    } catch (error) {
+      console.error("Search failed:", error);
+      toast.error("Search failed");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Handle filter by status
+  const handleStatusFilter = async (status) => {
+    setStatusFilter(status);
+    setIsFiltering(true);
+
+    try {
+      if (status === "all") {
+        // Reset to normal fetch
+        await fetchUsersWithParams();
+      } else {
+        await dispatch(
+          filterUsersByStatus({
+            status: status,
+            page: pagination.pageIndex + 1,
+            limit: pagination.pageSize,
+          })
+        ).unwrap();
+      }
+      toast.success(status === "all" ? "Showing all users" : `Filtered by ${status} users`);
+    } catch (error) {
+      console.error("Filter failed:", error);
+      toast.error("Filter failed");
+    } finally {
+      setIsFiltering(false);
+    }
+  };
+
+  // Clear all filters and search
+  const handleClearAll = () => {
+    setSearchQuery("");
+    setStatusFilter("all");
+    fetchUsersWithParams();
+    toast.success("Filters cleared");
+  };
 
   // Handle status update
   const handleStatusUpdate = async (userId, newStatus) => {
@@ -108,12 +181,7 @@ export default function UsersPage() {
       ).unwrap();
 
       // Refresh users list after successful update
-      dispatch(
-        fetchUsers({
-          page: pagination.pageIndex + 1,
-          limit: pagination.pageSize,
-        })
-      );
+      fetchUsersWithParams();
 
       toast.success(`User status updated to ${newStatus} successfully`);
       console.log(`User ${userId} status updated to ${newStatus}`);
@@ -173,6 +241,9 @@ export default function UsersPage() {
     };
   };
 
+  // Check if any filters are active
+  const hasActiveFilters = searchQuery || statusFilter !== "all";
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -213,9 +284,122 @@ export default function UsersPage() {
             {users?.count && (
               <p className="text-gray-600 mt-2">
                 Showing {users.results?.length || 0} of {users.count} users
+                {hasActiveFilters && " (filtered)"}
               </p>
             )}
           </div>
+        </div>
+
+        {/* Search and Filter Section */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search Input */}
+            <div className="flex-1">
+              <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-2">
+                Search Users
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Search className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    type="text"
+                    id="search"
+                    placeholder="Search by user ID, mobile number..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <Button
+                  onClick={handleSearch}
+                  disabled={isSearching}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6"
+                >
+                  {isSearching ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  ) : (
+                    <Search className="h-4 w-4 mr-2" />
+                  )}
+                  Search
+                </Button>
+              </div>
+            </div>
+
+            {/* Status Filter */}
+            <div className="lg:w-64">
+              <label htmlFor="status-filter" className="block text-sm font-medium text-gray-700 mb-2">
+                Filter by Status
+              </label>
+              <div className="flex gap-2">
+                <select
+                  id="status-filter"
+                  value={statusFilter}
+                  onChange={(e) => handleStatusFilter(e.target.value)}
+                  disabled={isFiltering}
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                >
+                  <option value="all">All Status</option>
+                  <option value="active">Active</option>
+                  <option value="suspended">Suspended</option>
+                  <option value="banned">Banned</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+                {isFiltering && (
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Clear Filters Button */}
+            {hasActiveFilters && (
+              <div className="lg:self-end">
+                <Button
+                  onClick={handleClearAll}
+                  variant="outline"
+                  className="text-gray-600 border-gray-300 hover:bg-gray-50"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Active Filters Badge */}
+          {hasActiveFilters && (
+            <div className="mt-4 flex flex-wrap gap-2">
+              {searchQuery && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  Search: "{searchQuery}"
+                  <button
+                    onClick={() => {
+                      setSearchQuery("");
+                      fetchUsersWithParams({ status: statusFilter !== "all" ? statusFilter : undefined });
+                    }}
+                    className="ml-2 hover:bg-blue-200 rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+              {statusFilter !== "all" && (
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Status: {statusFilter}
+                  <button
+                    onClick={() => handleStatusFilter("all")}
+                    className="ml-2 hover:bg-green-200 rounded-full p-0.5"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Status Update Error */}
@@ -276,17 +460,16 @@ export default function UsersPage() {
 
                   return (
                     <tr
-                  
-                     onClick={(e) => {
-                    e.stopPropagation();
-                    router.push(`/user/${user.id}`);
-                  }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        router.push(`/user/${user.id}`);
+                      }}
                       key={user.id}
                       className="hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
                     >
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-semibold text-gray-900">
-                        {user.id}
+                          {user.id}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -364,9 +547,10 @@ export default function UsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                handleStatusUpdate(user.id, "suspended")
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(user.id, "suspended");
+                              }}
                               disabled={statusUpdateLoading === user.id}
                               className="text-yellow-600 border-yellow-200 hover:bg-yellow-50 hover:text-yellow-700 transition-colors"
                             >
@@ -384,9 +568,10 @@ export default function UsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                handleStatusUpdate(user.id, "active")
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(user.id, "active");
+                              }}
                               disabled={statusUpdateLoading === user.id}
                               className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                             >
@@ -404,9 +589,10 @@ export default function UsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                handleStatusUpdate(user.id, "banned")
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(user.id, "banned");
+                              }}
                               disabled={statusUpdateLoading === user.id}
                               className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 transition-colors"
                             >
@@ -424,9 +610,10 @@ export default function UsersPage() {
                             <Button
                               size="sm"
                               variant="outline"
-                              onClick={() =>
-                                handleStatusUpdate(user.id, "active")
-                              }
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleStatusUpdate(user.id, "active");
+                              }}
                               disabled={statusUpdateLoading === user.id}
                               className="text-green-600 border-green-200 hover:bg-green-50 hover:text-green-700 transition-colors"
                             >
@@ -454,11 +641,22 @@ export default function UsersPage() {
                 <User className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                No users found
+                {hasActiveFilters ? "No users match your filters" : "No users found"}
               </h3>
               <p className="text-gray-500 max-w-md mx-auto">
-                There are currently no users in the system.
+                {hasActiveFilters 
+                  ? "Try adjusting your search criteria or filters to find what you're looking for."
+                  : "There are currently no users in the system."
+                }
               </p>
+              {hasActiveFilters && (
+                <Button
+                  onClick={handleClearAll}
+                  className="mt-4 bg-blue-600 hover:bg-blue-700"
+                >
+                  Clear All Filters
+                </Button>
+              )}
             </div>
           )}
         </div>
