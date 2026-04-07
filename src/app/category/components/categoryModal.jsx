@@ -217,7 +217,7 @@ const handleSubmit = async (e) => {
           <div className="flex justify-end space-x-3 p-6 border-t border-gray-100 bg-gray-50 rounded-b-xl">
             <Button 
               type="button" 
-              variant="outline" 
+              variant="edit" 
               onClick={handleClose}
               disabled={isSubmitting}
             >

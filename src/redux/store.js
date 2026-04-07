@@ -9,7 +9,9 @@ import callReducer from "./slices/callSlice.js"
 import executiveProfileSlice from "./slices/executiveProfileSlice.js"
 import paymentReducer from "./slices/paymentSlice.js"
 import adminProfileReducer from "./slices/adminProfileSlice.js";
-
+import dashboardReducer from "./slices/dashboardSlice.js"
+import carouselReducer from "./slices/carouselSlice.js"
+import referralReducer from "./slices/referralSlice.js"
 export const store = configureStore({
   reducer: {
     auth: authReducer,
@@ -19,8 +21,12 @@ export const store = configureStore({
     plans: plansReducer,
     calls: callReducer,
     executiveProfile: executiveProfileSlice,
-    payements: paymentReducer,
+    payments: paymentReducer,
     adminProfile: adminProfileReducer,
+    dashboard: dashboardReducer,
+    carousel: carouselReducer,
+    referrals: referralReducer
+
     
 
 

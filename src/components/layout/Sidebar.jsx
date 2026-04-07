@@ -19,6 +19,7 @@ import {
   FaCog,
   FaSignOutAlt,
   FaChevronLeft,
+  FaImage,
 } from "react-icons/fa";
 
 export default function Sidebar() {
@@ -31,7 +32,7 @@ export default function Sidebar() {
   const menuItems = [
     {
       category: "Dashboard",
-      items: [{ path: "/", icon: <FaHome size={20} />, label: "Dashboard" }],
+      items: [{ path: "/dashboard", icon: <FaHome size={20} />, label: "Dashboard" }],
     },
     {
       category: "User Management",
@@ -76,13 +77,15 @@ export default function Sidebar() {
         { path: "/referral", icon: <FaUser size={20} />, label: "Referrals" },
         { path: "/review", icon: <FaFileAlt size={20} />, label: "Reviews" },
         { path: "/reports", icon: <FaFileAlt size={20} />, label: "Reports" },
+        { path: "/carousel", icon: <FaImage size={20} />, label: "Carousels" },
+
       ],
     },
     {
       category: "Financial",
       items: [
         {
-          path: "/coinconversion",
+          path: "/coin-conversion",
           icon: <FaCoins size={20} />,
           label: "Coin Conversion",
         },
@@ -195,7 +198,13 @@ export default function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4 px-4">
+        <nav className="flex-1 overflow-y-auto py-4 px-4 
+          scrollbar-thin 
+          scrollbar-thumb-gray-600 
+          scrollbar-track-gray-800 
+          hover:scrollbar-thumb-gray-500 
+          scrollbar-thumb-rounded-full
+          scrollbar-track-rounded-full">
           <div className="space-y-1">
             {menuItems.map((section, index) => (
               <div key={section.category} className="mb-2">
@@ -268,6 +277,39 @@ export default function Sidebar() {
           </button>
         </div>
       </div>
+
+      {/* Custom scrollbar styles */}
+      <style jsx global>{`
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+          margin: 2px 0;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(156, 163, 175, 0.3);
+          border-radius: 2px;
+          transition: background 0.2s ease;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(156, 163, 175, 0.5);
+        }
+        
+        /* For Firefox */
+        .custom-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
+        }
+      `}</style>
     </>
   );
 }

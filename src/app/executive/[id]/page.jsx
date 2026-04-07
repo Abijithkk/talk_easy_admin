@@ -146,6 +146,8 @@ export default function ViewExecutive() {
               </div>
             </div>
 
+
+
             {/* Bank Details Card */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4 pb-3 border-b">Bank Details</h2>
@@ -255,7 +257,7 @@ function InfoField({ label, value }) {
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
-      <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-sm">
+      <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-bluie-900 text-sm">
         {value || "Not provided"}
       </div>
     </div>
